@@ -7,7 +7,9 @@ import java.sql.SQLException;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import it.polito.tdp.formulaone.model.Adiacenza;
 import it.polito.tdp.formulaone.model.Circuit;
 import it.polito.tdp.formulaone.model.Constructor;
 import it.polito.tdp.formulaone.model.Season;
@@ -88,7 +90,7 @@ public class FormulaOneDAO {
 		}
 	}
 	
-	public List<Constructor> getAllConstructors() {
+	public List<Constructor> getAllConstructors(Map<Integer, Constructor> idMap) {
 
 		String sql = "SELECT constructorId, name FROM constructors ORDER BY name";
 
@@ -101,7 +103,16 @@ public class FormulaOneDAO {
 
 			List<Constructor> constructors = new ArrayList<>();
 			while (rs.next()) {
-				constructors.add(new Constructor(rs.getInt("constructorId"), rs.getString("name")));
+				
+				if(idMap.get(rs.getInt("constructorId")) == null) {
+					
+				Constructor c= new Constructor(rs.getInt("constructorId"), rs.getString("name"));
+				
+				constructors.add(c);				
+				idMap.put(c.getConstructorId(), c);
+				}else {
+					constructors.add(idMap.get(rs.getInt("constructorId")));
+				}
 			}
 
 			conn.close();
@@ -126,9 +137,42 @@ public class FormulaOneDAO {
 		List<Circuit> circuits = dao.getAllCircuits();
 		System.out.println(circuits);
 
-		List<Constructor> constructors = dao.getAllConstructors();
-		System.out.println(constructors);
+		//List<Constructor> constructors = dao.getAllConstructors();
+		//System.out.println(constructors);
 		
+	}
+
+	public List<Adiacenza> getAdiacenze(Circuit c, Map<Integer, Constructor> idMap) {
+		
+		String sql="SELECT r1.constructorId id1  ,r2.constructorId id2 ,COUNT(*) AS peso " + 
+				"FROM results r1, results r2, races r " + 
+				"WHERE r1.raceId = r2.raceId AND r1.POSITION < r2.POSITION AND r1.constructorId > r2.constructorId " + 
+				"AND r.raceId= r1.raceId AND r.circuitId =? " + 
+				"GROUP BY r1.constructorId, r2.constructorId ";
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, c.getCircuitId());
+			ResultSet rs = st.executeQuery();
+
+			List<Adiacenza> list = new ArrayList<>();
+			while (rs.next()) {
+				Constructor c1= idMap.get(rs.getInt("id1"));
+				Constructor c2= idMap.get(rs.getInt("id2"));
+				
+				Adiacenza adj=new Adiacenza(c1, c2, rs.getDouble("peso"));
+				list.add(adj);
+			}
+
+			conn.close();
+			return list;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Query Error");
+		}
+	
 	}
 	
 }

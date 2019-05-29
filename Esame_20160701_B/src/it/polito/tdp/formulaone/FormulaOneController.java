@@ -3,6 +3,7 @@ package it.polito.tdp.formulaone;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.formulaone.model.Circuit;
 import it.polito.tdp.formulaone.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -21,7 +22,7 @@ public class FormulaOneController {
     private URL location;
 
     @FXML
-    private ComboBox<?> boxCircuiti;
+    private ComboBox<Circuit> boxCircuiti;
 
     @FXML
     private TextField textInputK;
@@ -31,10 +32,21 @@ public class FormulaOneController {
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
-
+    	Circuit input=boxCircuiti.getValue();
+    	if( input != null) {
+    		String ris=model.creaGrafo(input);
+    		txtResult.setText(ris);
+    	}else {
+    		showAlert("Selezionare un circuito!");
+    		
+    	}
     }
 
-    @FXML
+    private void showAlert(String message) {
+		
+	}
+
+	@FXML
     void doTrovaDreamTeam(ActionEvent event) {
 
     }
@@ -49,5 +61,6 @@ public class FormulaOneController {
     
     public void setModel(Model model){
     	this.model = model;
+    	boxCircuiti.getItems().addAll(model.getAllCircuit());
     }
 }
